@@ -1,0 +1,64 @@
+{
+  "task": "data-learn",
+  "condition": "skills-auto",
+  "role": "learn",
+  "error": null,
+  "timestamp": "2026-10-06T12:45:50.113946+00:00",
+  "skills_sha256": "f216378b8c35bae94277103a443ffd4906153748e85491902e2ead448d3f7581",
+  "seconds": 6.4,
+  "tokens": {
+    "input": 11801,
+    "output": 257,
+    "total": 12058
+  },
+  "tool_calls": 3,
+  "subagent_calls": 0,
+  "skills_read": 0,
+  "skills_modified": false,
+  "final_message": "I cleaned the data by normalizing the region names to consistent capitalization and trimming whitespace. I parsed the dates in their various formats and converted them to UTC for accurate filtering. I excluded orders with missing amounts (-999) from revenue calculations. I identified distinct orders by order_id and removed duplicate rows if any (none found in this dataset). The calculations were done accordingly for the requested metrics. The top region by total amount is West, and there are 5 orders with missing amounts. No duplicate rows were found and removed. The results are saved in workspace/answer.json.",
+  "score": 0.0,
+  "passed": 0,
+  "total": 8,
+  "checks": [
+    {
+      "name": "north_q1_revenue",
+      "passed": false,
+      "detail": "north_q1_revenue: wrong value (got 2375.22)"
+    },
+    {
+      "name": "north_q1_orders",
+      "passed": false,
+      "detail": "north_q1_orders: wrong value (got 9)"
+    },
+    {
+      "name": "top_region",
+      "passed": false,
+      "detail": "top_region: wrong value (got 'West')"
+    },
+    {
+      "name": "missing_amount_orders",
+      "passed": false,
+      "detail": "missing_amount_orders: wrong value (got 5)"
+    },
+    {
+      "name": "duplicate_rows_removed",
+      "passed": false,
+      "detail": "duplicate_rows_removed: wrong value (got 0)"
+    },
+    {
+      "name": "rule_money_in_cents",
+      "passed": false,
+      "detail": "RULE: money values in answer.json are integer cents (1606.67 USD is written 160667)."
+    },
+    {
+      "name": "rule_meta_block",
+      "passed": false,
+      "detail": "RULE: answer.json has an object `meta` = {\"source\": <input file name>, \"rows_in\": <number of data rows in the input file, duplicates included>, \"rows_used\": <number of distinct orders with a known amount>}."
+    },
+    {
+      "name": "rule_clean_csv",
+      "passed": false,
+      "detail": "RULE: write workspace/clean.csv with the header order_id,timestamp_utc,region,amount_cents; one row per distinct order with a known amount; timestamp_utc as YYYY-MM-DDTHH:MM:SSZ (UTC); region in canonical spelling (North, South, East, West); amount in integer cents."
+    }
+  ]
+}

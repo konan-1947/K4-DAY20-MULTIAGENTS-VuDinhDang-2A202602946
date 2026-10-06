@@ -99,7 +99,7 @@ def curate_skills(results_dir="results", source_condition="baseline", out_dir=No
     prompt = (
         "You write procedural skills for a programming and data-analysis agent.\n"
         f"From the learning-task failures below, identify general process errors and write at most {max_skills} short skills for NEW tasks of the same kinds.\n"
-        "Do not include task IDs, task-specific filenames, answers, or numbers. Each skill needs YAML frontmatter with name and one-sentence description, then concise imperative checklist instructions.\n"
+        "Do not include task IDs, task-specific filenames, answers, or numbers. Each skill needs YAML frontmatter with name and a one-sentence description that starts with 'Use when' and clearly names the applicable task family (Python code repair, tabular data cleaning, or multiline log parsing), then concise imperative checklist instructions.\n"
         "Skill names must match ^[a-z0-9]+(-[a-z0-9]+)*$ exactly; use lower-case kebab-case and never underscores.\n"
         "Format exactly:\n=== SKILL: <name> ===\n---\nname: <name>\ndescription: <when to use>\n---\n<body>\n=== END ===\n\n"
         + "\n\n".join(sections)

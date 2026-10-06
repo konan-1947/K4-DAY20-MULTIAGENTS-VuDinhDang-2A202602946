@@ -4,20 +4,20 @@
 
 ## 1. Thông tin sinh viên và cấu hình
 
-- Họ tên:
-- Mã sinh viên:
+- Họ tên: Vũ Đình Đăng
+- Mã sinh viên: 2A202602946
 
-- Nhà cung cấp và mô hình (`LAB_MODEL`, không ghi khóa API), nhiệt độ (`LAB_TEMPERATURE`), `recursion_limit`:
-- Phiên bản Deep Agents (`pip show deepagents`), hệ điều hành, chạy trực tiếp hay trong Docker:
-- Số lần chạy tác vụ đã dùng / ngân sách:
-- Commit của tag `freeze`:
+- Nhà cung cấp và mô hình: `openai:gpt-4.1-mini`; nhiệt độ `0`; `recursion_limit=60`.
+- Deep Agents `0.7.21`; Python 3.12 trên Linux container Docker.
+- Số lần chạy tác vụ đã dùng / ngân sách: sẽ tổng kết sau các lần chạy chính thức; GUIDE gợi ý tối đa khoảng 30 lượt.
+- Commit của tag `freeze`: sẽ điền sau khi đóng băng bộ skill cải tiến.
 
 ## 2. Giả thuyết (commit TRƯỚC tag `freeze`, Phần 4.0)
 
 > Dự đoán điều kiện nào đạt điểm cao nhất trên **tác vụ đánh giá** và vì sao. Nêu căn cứ từ phân loại lỗi (mục 4) và từ tài liệu tham khảo. Điền cả ba dòng; `verify_freeze.py` kiểm tra điều này.
 
 - H1 (subagents so với baseline): Dự đoán subagents không cải thiện ổn định điểm đánh giá so với baseline và tốn nhiều token hơn. Trên ba tác vụ học, chỉ data và logs gọi implementer; điểm tương ứng là 3/8 và 1/9, thấp hơn baseline data (5/8) và bằng baseline logs (1/9), trong khi token tăng.
-- H2 (skills-auto so với baseline): Dự đoán bộ skill tổng quát có thể hỗ trợ các quy ước lặp lại nhưng sẽ không khắc phục quy ước mới của tác vụ đánh giá; các tổng kết nghiên cứu được nêu trong GUIDE cảnh báo về quá khớp và lợi ích không chuyển giao. Curator hiện chưa sinh skill hợp lệ, nên nếu không có skill sau giới hạn thử lại, kỳ vọng điểm sẽ xấp xỉ baseline.
+- H2 (skills-auto so với baseline): Dự đoán bộ skill tổng quát có thể hỗ trợ các check kỹ thuật và quy ước lặp lại nhưng sẽ không khắc phục quy ước mới của tác vụ đánh giá; các tổng kết nghiên cứu được nêu trong GUIDE cảnh báo về quá khớp và lợi ích không chuyển giao. Ba skill cuối đều hợp lệ nhưng lượt thử có `skills_read=0`, nên mức cải thiện dự kiến nhỏ và không ổn định.
 - H3 (tác vụ học so với tác vụ đánh giá): Dự đoán điểm đánh giá thấp hơn điểm học do tác vụ đánh giá dùng dữ liệu khác và thêm quy ước mới; kết quả học hiện cho thấy quy ước đầu ra và phân tích log là nguồn lỗi đáng kể.
 
 ## 3. Làm quen Deep Agents (Phần 0.3)
@@ -38,7 +38,7 @@
 | logs-learn | `entry_count`, `timestamps_utc`, `exception_fields`, `repeat_counts`, `counts_by_service` | D | Check báo lần lượt số entry sai (19), chỉ 7/25 timestamp đúng, 18 exception sai, 18 repeat count sai và tổng theo service sai; vết cho thấy xử lý log nhiều dòng và repeat không chính xác. |
 | logs-learn | `rule_service_names`, `rule_sorted_errors`, `rule_schema_header` | E | `detail` nêu chuẩn hoá tên service, thứ tự sắp xếp và các trường schema bắt buộc. |
 
-Nhận xét: lỗi quy ước E xuất hiện ở cả ba họ tác vụ; dữ liệu học có 9 check quy ước thất bại. Skill có thể nhắc quy trình rà soát quy ước, nhưng skill sinh chưa hợp lệ nên chưa có bằng chứng phòng ngừa.
+Nhận xét: lỗi quy ước E xuất hiện ở cả ba họ tác vụ; dữ liệu học có 9 check quy ước thất bại. Skill có thể nhắc quy trình rà soát quy ước, nhưng lượt thử chưa đọc skill nên chưa có bằng chứng phòng ngừa.
 
 ## 5. Điều kiện `subagents` (Phần 2.3)
 
@@ -49,11 +49,13 @@ Nhận xét: lỗi quy ước E xuất hiện ở cả ba họ tác vụ; dữ l
 
 ## 6. Self-evolving: skill do curator sinh (Phần 3)
 
-- Curator được gọi 3 lần (lần đầu và hai lần thử lại theo giới hạn lab); không có skill hợp lệ được ghi. Phản hồi dùng tên có dấu gạch dưới, không đạt kiểm tra tên kebab-case; không sửa tay hay ghi skill vào thư mục.
+- Curator được gọi 2 lần trong vòng làm lại. Lần đầu sinh 3 skill hợp lệ nhưng `description` không kích hoạt việc đọc (`skills_read=0` ở cả ba tác vụ học), nên đã xóa theo hướng dẫn chất lượng. Sau khi prompt curator yêu cầu `description` bắt đầu bằng “Use when” và nêu rõ họ tác vụ, lần chạy lại sinh 3 skill cuối; không sửa tay nội dung skill.
 
 | Skill | Tổng quát hay riêng cho tác vụ học? | Đúng hay sai (nêu chỗ sai nếu có) | Độ dài, `description` và `skills_read` ở Phần 3.4 |
 |---|---|---|---|
-| Không có skill hợp lệ | — | — | `skills_read` bằng 0; không thể đánh giá mức dùng skill. |
+| `python-code-repair-best-practices` | Tổng quát cho sửa gói Python | Đúng: yêu cầu đọc docstring, sửa nguyên nhân gốc, type hints, regression tests và changelog | 9 dòng; description nêu Python code repair; lượt thử `skills_read=0`. |
+| `tabular-data-cleaning-standardization` | Tổng quát cho dữ liệu bảng bẩn | Đúng: chuẩn hóa ngày/múi giờ, giá trị thiếu, trùng lặp, đơn vị tiền và metadata | 11 dòng; description nêu tabular data; lượt thử `skills_read=0`. |
+| `multiline-log-parsing-and-normalization` | Tổng quát cho log nhiều dòng | Đúng: tách entry, traceback/repeat, UTC, schema, chuẩn hóa và sắp xếp | 11 dòng; description nêu multiline log; lượt thử `skills_read=0`. |
 
 ## 7. Kết quả so sánh (Phần 4.3, 4.4)
 
