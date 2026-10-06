@@ -7,7 +7,7 @@ Chạy thật:   python -m lab.curator
 import re
 from pathlib import Path
 
-from .tasks import eval_markers   # có sẵn: định danh của tác vụ đánh giá, tính lúc chạy
+from .tasks import ROOT, eval_markers   # có sẵn: định danh của tác vụ đánh giá, tính lúc chạy
 
 # ---- CÓ SẴN, KHÔNG SỬA: kiểm tra và tách khối skill (phần dễ sai và liên quan bảo mật) ----------------
 SAFE_NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -68,7 +68,52 @@ def curate_skills(results_dir="results", source_condition="baseline", out_dir=No
     model mặc định: make_model() (lab.model).
     Trả về: danh sách đường dẫn SKILL.md đã ghi.
     """
-    raise NotImplementedError("TODO: cài đặt curate_skills (xem guides/pseudocode/04_curator.md)")
+    from .model import make_model
+
+    output_dir = Path(out_dir) if out_dir is not None else ROOT / "skills" / "auto"
+    runs = []
+    for run_path in sorted((Path(results_dir) / source_condition).glob("*/run.json")):
+        try:
+            record = __import__("json").loads(run_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if record.get("role") != "learn":
+            continue
+        failed = [(check.get("name", ""), check.get("detail", ""))
+                  for check in record.get("checks", []) if not check.get("passed", False)]
+        if not failed:
+            continue
+        trace_path = run_path.parent / "trace.md"
+        try:
+            trace = trace_path.read_text(encoding="utf-8")[-6000:]
+        except OSError:
+            trace = ""
+        runs.append((record.get("task", run_path.parent.name), failed, trace))
+    if not runs:
+        print("Warning: no failed checks in learning tasks")
+        return []
+    sections = []
+    for task_name, failed, trace in runs:
+        checks = "\n".join(f"- {name}: {detail}" for name, detail in failed)
+        sections.append(f"Task: {task_name}\nFailed checks and feedback:\n{checks}\nTrace:\n{trace}")
+    prompt = (
+        "You write procedural skills for a programming and data-analysis agent.\n"
+        f"From the learning-task failures below, identify general process errors and write at most {max_skills} short skills for NEW tasks of the same kinds.\n"
+        "Do not include task IDs, task-specific filenames, answers, or numbers. Each skill needs YAML frontmatter with name and one-sentence description, then concise imperative checklist instructions.\n"
+        "Skill names must match ^[a-z0-9]+(-[a-z0-9]+)*$ exactly; use lower-case kebab-case and never underscores.\n"
+        "Format exactly:\n=== SKILL: <name> ===\n---\nname: <name>\ndescription: <when to use>\n---\n<body>\n=== END ===\n\n"
+        + "\n\n".join(sections)
+    )
+    reply = (model if model is not None else make_model()).invoke(prompt).content
+    written = []
+    for name, content in parse_skill_blocks(reply):
+        if len(written) >= max_skills or validate_skill(content, expected_name=name):
+            continue
+        target = output_dir / name / "SKILL.md"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content.strip() + "\n", encoding="utf-8")
+        written.append(target)
+    return written
 
 
 if __name__ == "__main__":
