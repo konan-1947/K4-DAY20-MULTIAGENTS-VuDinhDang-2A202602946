@@ -2,6 +2,9 @@
 # Build:  docker build -t lab-deepagents .
 # Run:    docker run --rm -it --env-file .env -v "$PWD":/lab lab-deepagents
 FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system core.autocrlf true
 WORKDIR /lab
 COPY pyproject.toml ./
 COPY src ./src
